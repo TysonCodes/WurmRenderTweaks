@@ -1,0 +1,74 @@
+<project name="WurmClientRenderTweaks">
+	
+	<property name="clientModName" value="ClientRenderTweaks"/>
+	<property file="build.properties"/>
+	
+	<taskdef name="jgit-buildnumber" classname="ru.concerteza.util.buildnumber.JGitBuildNumberAntTask">
+		<classpath>
+			<pathelement location="lib/common/jgit-buildnumber-ant-task-1.2.10.jar" />
+			<pathelement location="lib/common/org.eclipse.jgit-2.0.0.jar" />
+		</classpath>
+	</taskdef>
+
+	<target name="git-revision">
+		<jgit-buildnumber />
+	    <script language="javascript">
+	        var tag = project.getProperty("git.tag")
+	        var revision = project.getProperty("git.shortRevision")
+	    	var buildnumber;
+	    	if (tag) {
+	        	buildnumber = tag + "-" + revision
+	    	} else {
+	    		buildnumber = project.getProperty("git.branch") + "-" + revision
+	    	}
+	        project.setProperty("git.buildnumber", buildnumber)
+	    </script>
+	</target>
+
+   <path id="agoClientModLauncher">
+      <fileset dir="lib/common">
+         <include name="javassist.jar"/>
+      </fileset>
+      <fileset dir="lib/client">
+			<include name="modlauncher.jar"/>
+      </fileset>
+      <fileset dir="${wuClientDir}">
+         <include name="client-patched.jar"/>
+         <include name="common.jar"/>
+      </fileset>
+   </path>
+	
+	<target name="buildClient" depends="git-revision">
+		<delete dir="bin.ant.client"/>
+		<mkdir dir="bin.ant.client"/>
+		<javac srcdir="src/client" destdir="bin.ant.client" debug="true">
+			<classpath>
+				<path refid="agoClientModLauncher"/>
+			</classpath>
+		</javac>
+		<jar destfile="mods/${clientModName}/${clientModName}.jar">
+			<manifest>
+				<attribute name="Implementation-Version" value="${git.buildnumber}"/>
+			</manifest>
+			<fileset dir="bin.ant.client">
+			</fileset>
+		</jar>
+	</target>
+	
+	<target name="zipClient" depends="buildClient">
+		<zip destfile="dist/${clientModName}.zip">
+			<zipfileset dir="mods" prefix="mods">
+				<include name="${clientModName}.properties"/>
+				<include name="${clientModName}/**"/>
+			</zipfileset>
+		</zip>
+	</target>
+	
+	<target name="installClient" depends="buildClient">
+		<mkdir dir="${wuClientDir}/mods"/>
+		<mkdir dir="${wuClientDir}/mods/${clientModName}"/>
+		<copy todir="${wuClientDir}/mods" file="mods/${clientModName}.properties"/>
+		<copy todir="${wuClientDir}/mods/${clientModName}" file="mods/${clientModName}/${clientModName}.jar"/>
+	</target>
+
+</project>

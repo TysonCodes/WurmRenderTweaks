@@ -1,0 +1,10 @@
+bin.ant.server
+bin.ant.client
+bin
+dist
+build.properties
+.classpath
+.project
+.settings
+*~
+mods/*/*.jar
